@@ -2,7 +2,7 @@ package org.clyze.jphantom.util;
 
 import java.util.*;
 import org.jgrapht.Graphs;
-import org.jgrapht.DirectedGraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 
 public class GraphUtils
 {
@@ -10,7 +10,7 @@ public class GraphUtils
         throw new AssertionError();
     }
 
-    public static <G extends DirectedGraph<V,E>,V,E> G getSubgraph(
+    public static <G extends SimpleDirectedGraph<V,E>,V,E> G getSubgraph(
         G baseGraph, 
         Factory<G> factory,
         Set<? extends V> vertexSubset, 

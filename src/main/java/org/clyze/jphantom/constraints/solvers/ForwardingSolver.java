@@ -4,7 +4,8 @@ import java.util.*;
 
 import org.clyze.jphantom.hier.*;
 import org.clyze.jphantom.constraints.*;
-import org.jgrapht.*;
+import org.jgrapht.graph.AsUnmodifiableGraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.objectweb.asm.Type;
 
 public class ForwardingSolver implements TypeConstraintSolver 
@@ -53,7 +54,7 @@ public class ForwardingSolver implements TypeConstraintSolver
     }
 
     @Override
-    public DirectedGraph<Type,SubtypeConstraint> getConstraintGraph() {
+    public AsUnmodifiableGraph<Type,SubtypeConstraint> getConstraintGraph() {
         return solver.getConstraintGraph();
     }
 

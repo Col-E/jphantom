@@ -6,7 +6,6 @@ import org.clyze.jphantom.hier.graph.*;
 import org.clyze.jphantom.util.BootstrapClassLoader;
 import org.jgrapht.graph.DefaultEdge;
 import org.objectweb.asm.Type;
-import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.alg.TransitiveClosure;
 import static org.jgrapht.Graphs.*;
@@ -14,7 +13,7 @@ import static org.jgrapht.Graphs.*;
 /** @author George Balatsouras */
 public class CopyingSnapshot extends PseudoSnapshot
 {
-    private final DirectedGraph<Node, DefaultEdge> graph;
+    private final SimpleDirectedGraph<Node, DefaultEdge> graph;
     private final SimpleDirectedGraph<Node,DefaultEdge> closedGraph =
             new SimpleDirectedGraph<>(DefaultEdge.class);
 

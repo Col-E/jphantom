@@ -2,9 +2,8 @@ package org.clyze.jphantom.hier.graph;
 
 import org.clyze.jphantom.Types;
 import org.clyze.jphantom.hier.*;
-import org.jgrapht.*;
+import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.*;
-import org.jgrapht.alg.CycleDetector;
 import org.objectweb.asm.Type;
 
 public class GraphConverter implements Types
@@ -15,9 +14,9 @@ public class GraphConverter implements Types
         this.hierarchy = hierarchy;
     }
 
-    public DirectedGraph<Node,DefaultEdge> convert()
+    public SimpleDirectedGraph<Node,DefaultEdge> convert()
     {
-        DirectedGraph<Node,DefaultEdge> graph =
+        SimpleDirectedGraph<Node,DefaultEdge> graph =
                 new SimpleDirectedGraph<>(DefaultEdge.class);
 
         // Add vertices
@@ -30,8 +29,10 @@ public class GraphConverter implements Types
         for (Type t : hierarchy)
         {
             for (Type i : hierarchy.getInterfaces(t)) {
-                graph.addVertex(Node.get(i));
-                graph.addEdge(Node.get(t), Node.get(i));
+                Node target = Node.get(i);
+                Node source = Node.get(t);
+                graph.addVertex(target);
+                graph.addEdge(source, target);
             }
 
             Type sc = hierarchy.getSuperclass(t);

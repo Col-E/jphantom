@@ -1,7 +1,8 @@
 package org.clyze.jphantom.constraints.solvers;
 
 import java.util.*;
-import org.jgrapht.*;
+import org.jgrapht.graph.SimpleDirectedGraph;
+
 import static org.jgrapht.Graphs.*;
 import static org.clyze.jphantom.constraints.solvers.InterfaceSolver.GraphCycleException;
 
@@ -9,7 +10,7 @@ public class MinClassesStrategy<V,E> implements InterfaceSolver.Strategy<V,E>
 {
     private final Map<V,Colored<V>> colored = new HashMap<>();
     private final V root;
-    private DirectedGraph<V,E> graph;
+    private SimpleDirectedGraph<V,E> graph;
 
     MinClassesStrategy(V root) {
         this.root = root;
@@ -32,7 +33,7 @@ public class MinClassesStrategy<V,E> implements InterfaceSolver.Strategy<V,E>
     }
 
     @Override
-    public Set<V> classSubsetOf(DirectedGraph<V,E> graph) throws GraphCycleException
+    public Set<V> classSubsetOf(SimpleDirectedGraph<V,E> graph) throws GraphCycleException
     {
         Map<V,Colored<V>> backup = new HashMap<>(colored);
 

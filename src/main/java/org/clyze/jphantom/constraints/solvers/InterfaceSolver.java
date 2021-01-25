@@ -1,11 +1,13 @@
 package org.clyze.jphantom.constraints.solvers;
 
+import org.clyze.jphantom.hier.graph.SettableEdge;
 import org.clyze.jphantom.util.Factory;
 import java.util.*;
-import org.jgrapht.*;
+import java.util.function.Supplier;
+
 import org.jgrapht.graph.*;
 
-public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
+public abstract class InterfaceSolver<V,E extends SettableEdge<E,V>,S> extends AbstractSolver<V,E,S>
 {
     private final Strategy<V,E> strategy;
     private final V root;
@@ -24,14 +26,14 @@ public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
 
     ////////////////// Builder ///////////////////
 
-    public static abstract class Builder<V,E,S> {
+    public static abstract class Builder<V,E extends SettableEdge<E,V>,S> {
         private boolean minimize = true;
         private Strategy<V,E> strategy;
-        private final DirectedGraph<V,E> graph;
+        private final SimpleDirectedGraph<V,E> graph;
         private final Factory<S> factory;
         private final V root;
 
-        public Builder(V root, Factory<S> factory, DirectedGraph<V,E> graph)
+        public Builder(V root, Factory<S> factory, SimpleDirectedGraph<V,E> graph)
         {
             this.root = root;
             this.strategy = new MinClassesStrategy<>(root);
@@ -39,9 +41,9 @@ public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
             this.graph = graph;
         }
 
-        public Builder(V root, Factory<S> factory, EdgeFactory<V,E> efactory)
+        public Builder(V root, Factory<S> factory, Supplier<E> efactory)
         {
-            this(root, factory, new SimpleDirectedGraph<>(efactory));
+            this(root, factory, new SimpleDirectedGraph<>(null, efactory, false));
         }
 
         public Builder<V,E,S> minimize(boolean min) {
@@ -93,14 +95,14 @@ public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
     }
 
     @Override
-    protected final void solve(DirectedGraph<V,E> graph) throws UnsatisfiableStateException
+    protected final void solve(SimpleDirectedGraph<V,E> graph) throws UnsatisfiableStateException
     {
         // Class Subset
         classes = strategy.classSubsetOf(graph);
 
         // Interface Graph
-        DirectedGraph<V,E> igraph =
-                new SimpleDirectedGraph<>(graph.getEdgeFactory());
+        SimpleDirectedGraph<V,E> igraph =
+                new SimpleDirectedGraph<>(null, graph.getEdgeSupplier(), false);
                 
         // Fill interface graph
         for (E e : new HashSet<>(graph.edgeSet()))
@@ -112,7 +114,7 @@ public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
                 // Move interface edges
                 igraph.addVertex(source);
                 igraph.addVertex(target);
-                igraph.addEdge(source, target);
+                igraph.addEdge(source, target, igraph.getEdgeSupplier().get().set(source, target));
             } else if (!classes.contains(source)) {  // Interface type, Class supertype
                 assert target.equals(root);
             } else { continue; }                     // Class type, Class supertype
@@ -149,14 +151,14 @@ public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
         classes = null;
     }
 
-    protected void solveClassGraph(DirectedGraph<V,E> graph) 
+    protected void solveClassGraph(SimpleDirectedGraph<V,E> graph)
         throws UnsatisfiableStateException
     {
         classSolver = new SingleInheritanceSolver<>(graph, root);
         classSolver.solve();
     }
 
-    protected void solveInterfaceGraph(DirectedGraph<V,E> graph)
+    protected void solveInterfaceGraph(SimpleDirectedGraph<V,E> graph)
         throws UnsatisfiableStateException
     {
         ifaceSolver = new MultipleInheritanceSolver<>(graph, minimize);
@@ -170,7 +172,7 @@ public abstract class InterfaceSolver<V,E,S> extends AbstractSolver<V,E,S>
 
     public interface Strategy<V,E>
     {
-        Set<V> classSubsetOf(DirectedGraph<V,E> graph) throws GraphCycleException;
+        Set<V> classSubsetOf(SimpleDirectedGraph<V,E> graph) throws GraphCycleException;
         void markClass(V vertex);
         void markInterface(V vertex);
     }

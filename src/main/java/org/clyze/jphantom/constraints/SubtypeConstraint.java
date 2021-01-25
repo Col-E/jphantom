@@ -1,29 +1,30 @@
 package org.clyze.jphantom.constraints;
 
 import com.esotericsoftware.reflectasm.FieldAccess;
+import org.clyze.jphantom.hier.graph.SettableEdge;
 import org.jgrapht.graph.DefaultEdge;
 import org.objectweb.asm.Type;
-import org.jgrapht.EdgeFactory;
 
-public class SubtypeConstraint extends DefaultEdge implements Constraint
+import java.util.function.Supplier;
+
+public class SubtypeConstraint extends DefaultEdge implements Constraint, SettableEdge<SubtypeConstraint, Type>
 {
     private static final FieldAccess parentAccessor;
-    public final Type subtype;
-    public final Type supertype;
+    public Type subtype;
+    public Type supertype;
 
-    public SubtypeConstraint(Type subtype, Type supertype)
-    {
+    @Override
+    public SubtypeConstraint set(Type subtype, Type supertype) {
         if (subtype == null)
             throw new IllegalArgumentException();
         if (supertype == null)
             throw new IllegalArgumentException();
-
         this.subtype = subtype;
         this.supertype = supertype;
-
         // Set "IntrusiveEdge" values, which JGraphT internally uses to optimize fetching vertices of an edge
         parentAccessor.set(this, "source", subtype);
         parentAccessor.set(this, "target", supertype);
+        return this;
     }
 
     @Override
@@ -51,22 +52,24 @@ public class SubtypeConstraint extends DefaultEdge implements Constraint
 
     @Override
     public int hashCode() {
-        int result = 17;
-        result = 31 * result + subtype.hashCode();
-        result = 31 * result + supertype.hashCode();
-        return result;
+        if (subtype != null && supertype != null) {
+            int result = 17;
+            result = 31 * result + subtype.hashCode();
+            result = 31 * result + supertype.hashCode();
+            return result;
+        }
+        return super.hashCode();
     }
 
     public static final Factory factory = new Factory();
 
-    public static class Factory implements EdgeFactory<Type,SubtypeConstraint>
+    public static class Factory implements Supplier<SubtypeConstraint>
     {
         private Factory() {}
 
         @Override
-        public SubtypeConstraint createEdge(Type source, Type target)
-        {
-            return new SubtypeConstraint(source, target);
+        public SubtypeConstraint get() {
+            return new SubtypeConstraint();
         }
     }
 

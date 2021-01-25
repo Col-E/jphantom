@@ -1,36 +1,38 @@
 package org.clyze.jphantom.constraints.solvers;
 
+import org.clyze.jphantom.hier.graph.SettableEdge;
 import org.clyze.jphantom.util.MapFactory;
 import java.util.*;
-import org.jgrapht.*;
+import java.util.function.Supplier;
+
+import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.*;
-import org.jgrapht.alg.CycleDetector;
 import org.jgrapht.alg.TransitiveClosure;
 import static org.jgrapht.Graphs.*;
 
-public class MultipleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,List<V>>>
+public class MultipleInheritanceSolver<V,E extends SettableEdge<E,V>> extends AbstractSolver<V,E,Map<V,List<V>>>
 {
     private final boolean minimize;
 
     ///////////////////// Constructors /////////////////////
 
-    public MultipleInheritanceSolver(EdgeFactory<V,E> factory, boolean minimize)
+    public MultipleInheritanceSolver(Supplier<E> factory, boolean minimize)
     {
-        super(factory, new MapFactory<V,List<V>>());
+        super(factory, new MapFactory<>());
         this.minimize = minimize;
     }
 
-    public MultipleInheritanceSolver(DirectedGraph<V,E> graph, boolean minimize)
+    public MultipleInheritanceSolver(SimpleDirectedGraph<V,E> graph, boolean minimize)
     {
-        super(graph, new MapFactory<V,List<V>>());
+        super(graph, new MapFactory<>());
         this.minimize = minimize;
     }
 
-    public MultipleInheritanceSolver(EdgeFactory<V,E> factory) {
+    public MultipleInheritanceSolver(Supplier<E> factory) {
         this(factory, true);
     }
 
-    public MultipleInheritanceSolver(DirectedGraph<V,E> graph) {
+    public MultipleInheritanceSolver(SimpleDirectedGraph<V,E> graph) {
         this(graph, true);
     }
 
@@ -47,7 +49,7 @@ public class MultipleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,Lis
     /////////////////////// Constraint Solving ///////////////////////
 
     @Override
-    protected void solve(DirectedGraph<V,E> graph) throws UnsatisfiableStateException
+    protected void solve(SimpleDirectedGraph<V,E> graph) throws UnsatisfiableStateException
     {
         // Check for cycles in the interface graph
         if (new CycleDetector<>(graph).detectCycles())
@@ -56,7 +58,7 @@ public class MultipleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,Lis
         // Remove redundant edges
         if (minimize) {
             // Compute transitive closure
-            SimpleDirectedGraph<V,E> closure = new SimpleDirectedGraph<>(factory);
+            SimpleDirectedGraph<V,E> closure = new SimpleDirectedGraph<>(null, factory, false);
 
             addGraph(closure, graph);
             TransitiveClosure.INSTANCE.closeSimpleDirectedGraph(closure);
@@ -87,7 +89,7 @@ public class MultipleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,Lis
             solution.put(v, successorListOf(graph, v));
     }
 
-    protected final boolean removableEdge(E edge, DirectedGraph<V,E> graph) {
+    protected final boolean removableEdge(E edge, SimpleDirectedGraph<V,E> graph) {
         if (!graph.containsEdge(edge))
             throw new IllegalArgumentException();
         return removableEdge(graph.getEdgeSource(edge), graph.getEdgeTarget(edge));

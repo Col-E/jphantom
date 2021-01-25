@@ -1,35 +1,38 @@
 package org.clyze.jphantom.constraints.solvers;
 
+import org.clyze.jphantom.hier.graph.SettableEdge;
 import org.clyze.jphantom.util.Factory;
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
 
-public abstract class AbstractSolver<V,E,S> implements Solver<V,E,S>
+import java.util.function.Supplier;
+
+public abstract class AbstractSolver<V,E extends SettableEdge<E,V>,S> implements Solver<V,E,S>
 {
     protected boolean solved = false;
     protected S solution;
     private final Factory<S> solutionFactory;
-    protected final EdgeFactory<V,E> factory;
-    protected final DirectedGraph<V,E> _graph;
-    private final DirectedGraph<V,E> unmodifiableGraph;
+    protected final Supplier<E> factory;
+    protected final SimpleDirectedGraph<V,E> _graph;
+    private final AsUnmodifiableGraph<V,E> unmodifiableGraph;
 
     ////////////// Constructors //////////////
 
-    public AbstractSolver(EdgeFactory<V,E> factory, Factory<S> solutionFactory) {
-        this(new SimpleDirectedGraph<>(factory), solutionFactory);
+    public AbstractSolver(Supplier<E> factory, Factory<S> solutionFactory) {
+        this(new SimpleDirectedGraph<>(null, factory, false), solutionFactory);
     }
 
-    public AbstractSolver(DirectedGraph<V,E> graph, Factory<S> solutionFactory) {
+    public AbstractSolver(SimpleDirectedGraph<V,E> graph, Factory<S> solutionFactory) {
         this.solutionFactory = solutionFactory;
-        this.factory = graph.getEdgeFactory();
+        this.factory = graph.getEdgeSupplier();
         this._graph = graph;
-        this.unmodifiableGraph = new UnmodifiableDirectedGraph<>(graph);
+        this.unmodifiableGraph = new AsUnmodifiableGraph<>(graph);
     }
 
     //////////////// Methods ////////////////
 
     @Override
-    public DirectedGraph<V,E> getConstraintGraph() {
+    public AsUnmodifiableGraph<V,E> getConstraintGraph() {
         return unmodifiableGraph;
     }
 
@@ -40,7 +43,7 @@ public abstract class AbstractSolver<V,E,S> implements Solver<V,E,S>
         return solution;
     }
 
-    protected abstract void solve(DirectedGraph<V,E> graph)
+    protected abstract void solve(SimpleDirectedGraph<V,E> graph)
         throws UnsatisfiableStateException;
 
     @Override
@@ -48,7 +51,7 @@ public abstract class AbstractSolver<V,E,S> implements Solver<V,E,S>
     {
         if (solved) { return this; }
 
-        DirectedGraph<V, E> backup = new SimpleDirectedGraph<>(factory);
+        SimpleDirectedGraph<V, E> backup = new SimpleDirectedGraph<>(null, factory, false);
         Graphs.addGraph(backup, _graph);
         solution = solutionFactory.create();
         solve(backup);
@@ -68,7 +71,7 @@ public abstract class AbstractSolver<V,E,S> implements Solver<V,E,S>
         if (!_graph.containsVertex(target))
             _graph.addVertex(target);
 
-        _graph.addEdge(source, target);
+        _graph.addEdge(source, target, _graph.getEdgeSupplier().get().set(source, target));
     }
 
 

@@ -1,31 +1,34 @@
 package org.clyze.jphantom.constraints.solvers;
 
+import org.clyze.jphantom.hier.graph.SettableEdge;
 import org.clyze.jphantom.util.MapFactory;
 import java.util.*;
-import org.jgrapht.*;
-import org.jgrapht.graph.*;
-import org.jgrapht.alg.ConnectivityInspector;
+import java.util.function.Supplier;
 
-public class SingleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,V>>
+import org.jgrapht.*;
+import org.jgrapht.alg.connectivity.ConnectivityInspector;
+import org.jgrapht.graph.*;
+
+public class SingleInheritanceSolver<V,E extends SettableEdge<E,V>> extends AbstractSolver<V,E,Map<V,V>>
 {
     protected final V root;
 
     ///////////////////// Constructors /////////////////////
 
-    public SingleInheritanceSolver(EdgeFactory<V,E> factory, V root) {
+    public SingleInheritanceSolver(Supplier<E> factory, V root) {
         super(factory, new MapFactory<V,V>());
         this.root = root;
         this._graph.addVertex(root);
     }
 
-    public SingleInheritanceSolver(DirectedGraph<V,E> graph, V root) {
+    public SingleInheritanceSolver(SimpleDirectedGraph<V,E> graph, V root) {
         super(graph, new MapFactory<V,V>());
         this.root = root;
         this._graph.addVertex(root);
         
         for (V v : this._graph.vertexSet())
             if (!v.equals(root))
-                this._graph.addEdge(v, root);
+                this._graph.addEdge(v, root, _graph.getEdgeSupplier().get().set(v, root));
     }
 
     ///////////////////// Methods /////////////////////
@@ -34,39 +37,40 @@ public class SingleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,V>>
     public void addConstraintEdge(V source, V target)
     {
         super.addConstraintEdge(source, target);
-        _graph.addEdge(source, root);
-        _graph.addEdge(target, root);        
+        _graph.addEdge(source, root, _graph.getEdgeSupplier().get().set(source, root));
+        _graph.addEdge(target, root, _graph.getEdgeSupplier().get().set(target, root));
     }
     
-    private DirectedGraph<V,E> getComponent(DirectedGraph<V,E> graph, V node)
+    private SimpleDirectedGraph<V,E> getComponent(SimpleDirectedGraph<V,E> graph, V node)
     {
-        UndirectedGraph<V,E> undirectedView = new AsUndirectedGraph<>(graph);
+        AsUndirectedGraph<V,E> undirectedView = new AsUndirectedGraph<>(graph);
 
         Set<V> nodes = new ConnectivityInspector<>(undirectedView).connectedSetOf(node);
-        DirectedGraph<V,E> subgraph = createSubgraph(graph, nodes);
-        DirectedGraph<V,E> result = new SimpleDirectedGraph<>(graph.getEdgeFactory());
+        SimpleDirectedGraph<V,E> subgraph = createSubgraph(graph, nodes);
+        SimpleDirectedGraph<V,E> result = new SimpleDirectedGraph<>(null, graph.getEdgeSupplier(), false);
         Graphs.addGraph(result, subgraph);
 
         return result;
     }
 
-    private DirectedGraph<V, E> createSubgraph(DirectedGraph<V, E> graph, Set<V> nodes) {
+    private SimpleDirectedGraph<V, E> createSubgraph(SimpleDirectedGraph<V, E> graph, Set<V> nodes) {
         // Code below is equivalent to:  new DirectedSubgraph<>(graph, nodes, null);
         //  - DirectedSubgraph stream filtering is quite slow
         //  - Manually generate a subgraph using SimpleDirectedGraph with passed vertices "nodes"
-        DirectedGraph<V, E> subgraph = new SimpleDirectedGraph<>(graph.getEdgeFactory());
+        SimpleDirectedGraph<V, E> subgraph = new SimpleDirectedGraph<>(null, graph.getEdgeSupplier(), false);
         for (V vertex : nodes) {
             subgraph.addVertex(vertex);
             for (E edge : graph.outgoingEdgesOf(vertex)) {
+                V source = graph.getEdgeSource(edge);
                 V target = graph.getEdgeTarget(edge);
                 subgraph.addVertex(target);
-                subgraph.addEdge(graph.getEdgeSource(edge), target);
+                subgraph.addEdge(source, target, _graph.getEdgeSupplier().get().set(source, target));
             }
         }
         return subgraph;
     }
 
-    private void placeUnder(V top, DirectedGraph<V,E> graph)
+    private void placeUnder(V top, SimpleDirectedGraph<V,E> graph)
         throws GraphCycleException
     {
         // Remove vertex and remaining incoming edges
@@ -97,7 +101,7 @@ public class SingleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,V>>
             assert !solution.containsKey(next);
             solution.put(next, top);
 
-            DirectedGraph<V,E> subgraph = getComponent(graph, next);
+            SimpleDirectedGraph<V,E> subgraph = getComponent(graph, next);
 
             // Remove subgraph from constraint graph
 
@@ -125,7 +129,7 @@ public class SingleInheritanceSolver<V,E> extends AbstractSolver<V,E,Map<V,V>>
     }
 
     @Override
-    protected void solve(DirectedGraph<V,E> graph) throws UnsatisfiableStateException
+    protected void solve(SimpleDirectedGraph<V,E> graph) throws UnsatisfiableStateException
     {
         placeUnder(root, graph);
         assert graph.vertexSet().isEmpty();

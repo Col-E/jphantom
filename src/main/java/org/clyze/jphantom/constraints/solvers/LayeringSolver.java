@@ -1,16 +1,19 @@
 package org.clyze.jphantom.constraints.solvers;
 
 import java.util.*;
-import org.jgrapht.*;
+
+import org.clyze.jphantom.hier.graph.SettableEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
+
 import static com.google.common.collect.Iterables.concat;
 
-public abstract class LayeringSolver<V,E> extends MultipleInheritanceSolver<V,E>
+public abstract class LayeringSolver<V,E extends SettableEdge<E,V>> extends MultipleInheritanceSolver<V,E>
 {
     private final Set<E> special;
     private final Map<V,List<V>> projections;
 
     public LayeringSolver(
-        DirectedGraph<V,E> graph, Set<E> special, Map<V,List<V>> projections, boolean minimize)
+            SimpleDirectedGraph<V,E> graph, Set<E> special, Map<V,List<V>> projections, boolean minimize)
     {
         super(graph, minimize);
 
@@ -34,7 +37,7 @@ public abstract class LayeringSolver<V,E> extends MultipleInheritanceSolver<V,E>
         return projections.get(source);
     }
 
-    private Map<V,Integer> stratify(final DirectedGraph<V,E> graph) throws UnsatisfiableStateException
+    private Map<V,Integer> stratify(final SimpleDirectedGraph<V,E> graph) throws UnsatisfiableStateException
     {
         Set<E> pathEdges = new HashSet<>(graph.edgeSet());
         Set<E> specialEdges = new HashSet<>();
@@ -113,7 +116,7 @@ public abstract class LayeringSolver<V,E> extends MultipleInheritanceSolver<V,E>
     }
 
     @Override
-    protected void solve(DirectedGraph<V,E> graph) throws UnsatisfiableStateException
+    protected void solve(SimpleDirectedGraph<V,E> graph) throws UnsatisfiableStateException
     {
         Map<V,Integer> strata = stratify(graph);
 
@@ -128,7 +131,7 @@ public abstract class LayeringSolver<V,E> extends MultipleInheritanceSolver<V,E>
 
                 if (pStratum < tStratum) {
                     graph.removeEdge(source, target);
-                    graph.addEdge(proj, target);
+                    graph.getEdgeSupplier().get().set(proj, target);
                     continue DIRECT;
                 }
             }

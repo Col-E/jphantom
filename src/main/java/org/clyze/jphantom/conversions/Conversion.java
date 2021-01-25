@@ -14,7 +14,10 @@ public abstract class Conversion
     }
 
     public Constraint asConstraint() {
-        return SubtypeConstraint.factory.createEdge(from, to);
+        SubtypeConstraint constraint = SubtypeConstraint.factory.get();
+        //constraint.set(from, to);
+        constraint.set(from, to);
+        return constraint;
     }
 
     public abstract void accept(ConversionVisitor visitor);

@@ -1,10 +1,10 @@
 package org.clyze.jphantom.constraints.solvers;
 
-import org.jgrapht.*;
+import org.jgrapht.graph.AsUnmodifiableGraph;
 
 public interface Solver<V,E,S> {
 
-    DirectedGraph<V,E> getConstraintGraph();
+    AsUnmodifiableGraph<V,E> getConstraintGraph();
 
     S getSolution();
 

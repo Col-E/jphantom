@@ -92,7 +92,7 @@
     <dependency>
       <groupId>org.jgrapht</groupId>
       <artifactId>jgrapht-core</artifactId>
-      <version>1.0.1</version> <!-- After 1.1.0 are major api incompatibilities -->
+      <version>1.4.0</version> <!-- After 1.1.0 are major api incompatibilities -->
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

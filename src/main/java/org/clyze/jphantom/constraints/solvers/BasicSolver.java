@@ -7,7 +7,7 @@ import org.clyze.jphantom.exc.*;
 import org.clyze.jphantom.hier.*;
 import org.clyze.jphantom.hier.closure.*;
 import org.clyze.jphantom.constraints.*;
-import org.jgrapht.*;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.objectweb.asm.Type;
 
 public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHierarchy>
@@ -35,7 +35,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
     {
         private ClassHierarchy hierarchy = new IncrementalClassHierarchy();
 
-        public Builder(DirectedGraph<Type,SubtypeConstraint> graph) {
+        public Builder(SimpleDirectedGraph<Type,SubtypeConstraint> graph) {
             super(OBJECT, defaultFactory(), graph);
         }
 
@@ -148,7 +148,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
     }
 
     @Override
-    protected void solveClassGraph(DirectedGraph<Type,SubtypeConstraint> graph) 
+    protected void solveClassGraph(SimpleDirectedGraph<Type,SubtypeConstraint> graph)
         throws UnsatisfiableStateException
     {
         if (!initialized)
@@ -206,8 +206,9 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
                             Type sc = hierarchy.getSuperclass(t);
 
                             if (!sc.equals(parent)) {
-                                SubtypeConstraint impliedEdge = _graph.getEdgeFactory().
-                                    createEdge(t, parent);
+                                SubtypeConstraint impliedEdge = _graph.getEdgeSupplier().get();
+
+                                impliedEdge.set(t, parent);
 
                                 throw new CrossoverConstraintException(impliedEdge, sc);
                             }
@@ -243,7 +244,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
     }
 
     @Override
-    protected void solveInterfaceGraph(DirectedGraph<Type,SubtypeConstraint> graph)
+    protected void solveInterfaceGraph(SimpleDirectedGraph<Type,SubtypeConstraint> graph)
         throws UnsatisfiableStateException
     {
         if (!initialized)
@@ -410,7 +411,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
         private final Map<Type,List<Type>> domains = new HashMap<>();
         private Queue<Pair<Type,Type>> constraints;
 
-        RecursiveSolver(DirectedGraph<Type,SubtypeConstraint> graph, boolean minimize)
+        RecursiveSolver(SimpleDirectedGraph<Type,SubtypeConstraint> graph, boolean minimize)
         { super(graph, minimize); }
 
 
@@ -439,7 +440,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
         }
 
         @Override
-        protected void solve(DirectedGraph<Type,SubtypeConstraint> graph) 
+        protected void solve(SimpleDirectedGraph<Type,SubtypeConstraint> graph)
             throws UnsatisfiableStateException
         {
             // Remove constraints from fixed source vertices
@@ -476,7 +477,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
                 throw new UnsatisfiableStateException();
         }
 
-        private boolean solveAux(DirectedGraph<Type,SubtypeConstraint> graph)
+        private boolean solveAux(SimpleDirectedGraph<Type,SubtypeConstraint> graph)
         {
             // Base Case
 
@@ -511,7 +512,7 @@ public class BasicSolver extends InterfaceSolver<Type,SubtypeConstraint,ClassHie
             for (Type t : domain) {
                 if (!graph.containsVertex(t))
                     graph.addVertex(t);
-                graph.addEdge(t, target);             
+                graph.getEdgeSupplier().get().set(source, target);
                 if (solveAux(graph)) { return true; }
                 graph.removeEdge(t, target);
             }

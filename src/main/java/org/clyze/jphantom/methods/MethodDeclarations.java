@@ -7,6 +7,7 @@ import org.clyze.jphantom.Types;
 import org.clyze.jphantom.hier.*;
 import org.clyze.jphantom.hier.graph.*;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.objectweb.asm.Type;
 import static org.jgrapht.Graphs.*;
 
@@ -114,7 +115,7 @@ public class MethodDeclarations implements Types
     private static List<Type> topologicalOrder(ClassHierarchy hierarchy)
     {
         Node root = Node.get(OBJECT);
-        DirectedGraph<Node, DefaultEdge> graph = new GraphConverter(hierarchy).convert();
+        SimpleDirectedGraph<Node, DefaultEdge> graph = new GraphConverter(hierarchy).convert();
         
         List<Type> order = new ArrayList<>();
         Set<Node> unconstrained = new HashSet<>();
